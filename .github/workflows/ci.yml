@@ -9,16 +9,17 @@ on:
 jobs:
   build:
     name: Build & Verify
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Verify Swift & Clang Environment
+      - name: Verify Swift, Clang & SDK Environment
         run: |
           swift --version
           clang --version
+          xcrun --show-sdk-path
 
       - name: Build CLI & App Bundle
         run: |

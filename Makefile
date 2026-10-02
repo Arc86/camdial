@@ -3,7 +3,8 @@ CACHE_DIR = /tmp/swift-cache
 ARCH ?= $(shell uname -m)
 MACOS_MIN_VER ?= 13.0
 TARGET ?= $(ARCH)-apple-macos$(MACOS_MIN_VER)
-SWIFT_FLAGS = -O -module-cache-path $(CACHE_DIR) -target $(TARGET)
+SDKROOT ?= $(shell xcrun --show-sdk-path)
+SWIFT_FLAGS = -O -module-cache-path $(CACHE_DIR) -target $(TARGET) -sdk $(SDKROOT)
 
 VERSION = 1.0.0
 BUILD_DIR = build
