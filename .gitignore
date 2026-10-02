@@ -1,0 +1,36 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails and files that might appear in directories
+._*
+.Spotlight-V100
+.Trashes
+
+# Build outputs
+build/
+dist/
+*.app/
+*.dSYM/
+*.ipa
+*.pkg
+
+# Compiler & Swift caches
+/tmp/swift-cache/
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode user data (if opened in Xcode)
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/
+
+# Editors & IDEs
+.vscode/
+.idea/
+*.swp
+*~
