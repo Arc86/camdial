@@ -31,11 +31,13 @@ jobs:
           test -f build/camdial
           ./build/camdial preset list
 
-      - name: Verify macOS App Bundle Structure
+      - name: Verify macOS App Bundle Structure & Signatures
         run: |
           test -d build/CamDial.app
           test -f build/CamDial.app/Contents/MacOS/CamDial
           test -f build/CamDial.app/Contents/Info.plist
+          codesign -vvv build/CamDial.app
+          codesign -vvv build/camdial
 
       - name: Package Distributable Archive
         run: |

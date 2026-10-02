@@ -85,6 +85,32 @@ Because macOS lacks native hardware sliders for external webcams, you are typica
 
 ---
 
+## Download & Installation
+
+### Option A: Download Pre-built Release
+1. Download **`CamDial-v0.1.0-beta.1.zip`** from [GitHub Releases](https://github.com/wdekker/camdial/releases).
+2. Unzip and drag `CamDial.app` to your `/Applications` folder (or run it directly).
+3. **First-time launch (macOS Gatekeeper notice)**:
+   Because CamDial is an open-source tool distributed outside the Mac App Store without Apple Developer ID notarization, macOS will quarantine the downloaded file and say *"CamDial is damaged and can't be opened"*.
+   
+   To clear the quarantine flag, open Terminal and run:
+   ```bash
+   xattr -cr /Applications/CamDial.app
+   ```
+   *(Or if running from Downloads: `xattr -cr ~/Downloads/CamDial.app`)*
+
+   Alternatively, right-click (or Control-click) `CamDial.app` in Finder and select **Open**.
+
+### Option B: Build from Source
+```bash
+git clone https://github.com/wdekker/camdial.git
+cd camdial
+make all
+open build/CamDial.app
+```
+
+---
+
 ## Quick Start
 
 ### 1. Launch the GUI App

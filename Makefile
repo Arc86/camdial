@@ -55,6 +55,7 @@ cli: $(BUILD_DIR)
 	$(SWIFTC) $(SWIFT_FLAGS) \
 		-framework Foundation -framework IOKit \
 		$(CLI_SRCS) -o $(CLI_BINARY)
+	@codesign --force --sign - $(CLI_BINARY)
 	@echo "==> CLI binary built at: $(CLI_BINARY)"
 
 app: $(BUILD_DIR)
@@ -66,6 +67,8 @@ app: $(BUILD_DIR)
 	$(SWIFTC) $(SWIFT_FLAGS) \
 		-framework Cocoa -framework SwiftUI -framework AVFoundation -framework IOKit \
 		$(APP_SRCS) -o $(APP_BUNDLE)/Contents/MacOS/$(APP_NAME)
+	@echo "==> Code signing $(APP_BUNDLE)..."
+	@codesign --force --deep --sign - $(APP_BUNDLE)
 	@echo "==> App bundle built at: $(APP_BUNDLE)"
 
 dist: all
