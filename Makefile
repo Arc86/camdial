@@ -1,6 +1,9 @@
 SWIFTC = swiftc
 CACHE_DIR = /tmp/swift-cache
-SWIFT_FLAGS = -O -module-cache-path $(CACHE_DIR)
+ARCH ?= $(shell uname -m)
+MACOS_MIN_VER ?= 13.0
+TARGET ?= $(ARCH)-apple-macos$(MACOS_MIN_VER)
+SWIFT_FLAGS = -O -module-cache-path $(CACHE_DIR) -target $(TARGET)
 
 VERSION = 1.0.0
 BUILD_DIR = build

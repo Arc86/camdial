@@ -32,7 +32,11 @@ public final class CameraDevice: Identifiable, ObservableObject {
         self.avDevice = avDevice
         self.id = avDevice.uniqueID
         self.name = avDevice.localizedName
-        self.isExternal = avDevice.deviceType == .external
+        if #available(macOS 14.0, *) {
+            self.isExternal = (avDevice.deviceType == .external)
+        } else {
+            self.isExternal = (avDevice.deviceType == .externalUnknown)
+        }
     }
 
     public func resetToDefaults() {

@@ -36,12 +36,16 @@ public final class DeviceManager: ObservableObject {
         let uvcCameras = UVCDiscovery.discoverDevices()
 
         // 2. Discover AVFoundation video devices
+        var deviceTypes: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera]
+        if #available(macOS 14.0, *) {
+            deviceTypes.append(.external)
+            deviceTypes.append(.continuityCamera)
+        } else {
+            deviceTypes.append(.externalUnknown)
+        }
+
         let avDiscovery = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [
-                .builtInWideAngleCamera,
-                .external,
-                .continuityCamera
-            ],
+            deviceTypes: deviceTypes,
             mediaType: .video,
             position: .unspecified
         )

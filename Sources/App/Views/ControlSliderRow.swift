@@ -104,7 +104,7 @@ public struct ControlSliderRow: View {
                     }
                 }
             )
-            .onChange(of: value) { _, _ in
+            .onChange(of: value) { _ in
                 onCommit()
             }
             .disabled(!isCapable)
