@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verify Swift, Clang & SDK Environment
         run: |
@@ -40,4 +40,4 @@ jobs:
       - name: Package Distributable Archive
         run: |
           make dist
-          test -f build/CamDial-v1.0.0.zip
+          test -f build/CamDial-*.zip

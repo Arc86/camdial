@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Application & CLI
         run: |
@@ -33,11 +33,11 @@ jobs:
           echo "archive_path=build/${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: CamDial ${{ github.ref_name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: |
             ${{ steps.package.outputs.archive_path }}

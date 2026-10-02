@@ -6,7 +6,7 @@ TARGET ?= $(ARCH)-apple-macos$(MACOS_MIN_VER)
 SDKROOT ?= $(shell xcrun --show-sdk-path)
 SWIFT_FLAGS = -O -module-cache-path $(CACHE_DIR) -target $(TARGET) -sdk $(SDKROOT)
 
-VERSION = 1.0.0
+VERSION = 0.1.0-beta.1
 BUILD_DIR = build
 APP_NAME = CamDial
 APP_BUNDLE = $(BUILD_DIR)/$(APP_NAME).app
