@@ -10,7 +10,6 @@ import SwiftUI
 
 public struct SettingsTabContainer<Content: View>: View {
     @Environment(\.settingsContentMaxHeight) private var maxHeight
-    @State private var contentHeight: CGFloat = 0
     private let content: Content
 
     public init(@ViewBuilder content: () -> Content) {
@@ -18,30 +17,18 @@ public struct SettingsTabContainer<Content: View>: View {
     }
 
     public var body: some View {
-        // A single ScrollView sized to the measured content keeps one stable view
-        // identity, so controls aren't rebuilt (losing focus or an in-flight slider
-        // drag) when the content crosses the height limit.
+        // A ScrollView's ideal height is its content's height, so the window sizes to the
+        // controls and only starts scrolling once they exceed maxHeight. No measurement
+        // round-trip (which briefly collapsed the window on every tab switch), and one
+        // stable view identity so controls aren't rebuilt at the limit.
         ScrollView {
             VStack(spacing: 10) {
                 content
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .top)
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.preference(key: ContentHeightKey.self, value: proxy.size.height)
-                }
-            )
         }
-        .frame(height: min(contentHeight, maxHeight))
-        .onPreferenceChange(ContentHeightKey.self) { contentHeight = $0 }
-    }
-}
-
-private struct ContentHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+        .frame(maxHeight: maxHeight)
     }
 }
 

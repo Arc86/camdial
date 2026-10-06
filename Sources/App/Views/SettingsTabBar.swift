@@ -40,7 +40,7 @@ public struct SettingsTabBar: View {
             ForEach(SettingsTab.allCases) { tab in
                 let isSelected = tab == selection
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { selection = tab }
+                    selection = tab
                 } label: {
                     VStack(spacing: 3) {
                         Image(systemName: tab.icon)
@@ -70,5 +70,8 @@ public struct SettingsTabBar: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(0.05))
         )
+        // Animate only the highlight within the bar; a withAnimation around the selection
+        // change would also animate the tab content swap and the window resize.
+        .animation(.easeInOut(duration: 0.2), value: selection)
     }
 }
