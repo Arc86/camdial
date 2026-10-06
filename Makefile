@@ -33,6 +33,8 @@ APP_SRCS = \
 	Sources/App/Views/CameraViewModel.swift \
 	Sources/App/Views/CameraPreviewView.swift \
 	Sources/App/Views/ControlSliderRow.swift \
+	Sources/App/Views/SettingsTabBar.swift \
+	Sources/App/Views/SettingsTabContainer.swift \
 	Sources/App/Views/PictureSettingsView.swift \
 	Sources/App/Views/ExposureSettingsView.swift \
 	Sources/App/Views/OpticsSettingsView.swift \

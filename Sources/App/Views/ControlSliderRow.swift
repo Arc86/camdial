@@ -45,58 +45,25 @@ public struct ControlSliderRow: View {
         return autoBinding?.wrappedValue ?? false
     }
 
+    /// Shared column widths so labels, values and reset buttons line up across rows.
+    static let labelWidth: CGFloat = 108
+    static let valueWidth: CGFloat = 42
+
     public var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Label(title, systemImage: icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isCapable ? .primary : .secondary)
+        HStack(spacing: 6) {
+            SettingRowLabel(title: title, icon: icon, isEnabled: isCapable)
 
-                Spacer()
-
-                if let auto = autoBinding {
-                    Toggle("Auto", isOn: auto)
-                        .toggleStyle(.switch)
-                        .controlSize(.mini)
-                        .labelsHidden()
-                        .help("Toggle automatic adjustment")
-                    Text("Auto")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(isAutoActive ? .accentColor : .secondary)
-                }
-
-                HStack(spacing: 3) {
-                    Text("\(Int(value))\(unit.isEmpty ? "" : " " + unit)")
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundColor(isCapable ? (isAutoActive ? .accentColor : .primary) : .secondary)
-
-                    if isAutoActive {
-                        Text("(Auto)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.accentColor)
-                    }
-                }
-                .frame(minWidth: 54, alignment: .trailing)
-
-                Button(action: {
-                    if isAutoActive {
-                        autoBinding?.wrappedValue = false
-                    }
-                    value = defaultValue
-                    onCommit()
-                }) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 10))
-                }
-                .buttonStyle(.borderless)
-                .disabled(!isCapable || (value == defaultValue && !isAutoActive))
-                .help("Reset to default (\(Int(defaultValue)))")
-            }
-
+            // Snap via the binding instead of `step:` — on macOS a stepped Slider draws
+            // one tick mark per step, which renders as a dense dashed bar for UVC ranges.
             Slider(
-                value: $value,
+                value: Binding(
+                    get: { value },
+                    set: { newValue in
+                        let snapped = snap(newValue)
+                        if snapped != value { value = snapped }
+                    }
+                ),
                 in: range,
-                step: step,
                 onEditingChanged: { isEditing in
                     CameraViewModel.shared.isUserDragging = isEditing
                     if isEditing && isAutoActive {
@@ -104,12 +71,91 @@ public struct ControlSliderRow: View {
                     }
                 }
             )
+            .controlSize(.small)
             .onChange(of: value) { _ in
                 onCommit()
             }
             .disabled(!isCapable)
             .opacity(isCapable ? 1.0 : 0.4)
+
+            if let auto = autoBinding {
+                AutoPill(isOn: auto)
+            }
+
+            // No digit grouping: "5264 K" rather than a locale-dependent "5.264 K"
+            Text("\(Int(value), format: .number.grouping(.never))\(unit.isEmpty ? "" : " " + unit)")
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundColor(isCapable ? (isAutoActive ? .accentColor : .primary) : .secondary)
+                .lineLimit(1)
+                .fixedSize()
+                // Minimum keeps typical values aligned; longer ones ("10000 K") widen instead of truncating
+                .frame(minWidth: Self.valueWidth, alignment: .trailing)
+
+            Button(action: {
+                if isAutoActive {
+                    autoBinding?.wrappedValue = false
+                }
+                value = defaultValue
+                onCommit()
+            }) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 10))
+            }
+            .buttonStyle(.borderless)
+            .disabled(!isCapable || (value == defaultValue && !isAutoActive))
+            .help("Reset to default (\(Int(defaultValue)))")
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
+    }
+
+    private func snap(_ raw: Double) -> Double {
+        guard step > 0 else { return raw }
+        let stepped = range.lowerBound + ((raw - range.lowerBound) / step).rounded() * step
+        return min(max(stepped, range.lowerBound), range.upperBound)
+    }
+}
+
+/// Icon + title column shared by all setting rows.
+struct SettingRowLabel: View {
+    let title: String
+    let icon: String
+    var isEnabled: Bool = true
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .frame(width: 16)
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(isEnabled ? .primary : .secondary)
+        .frame(width: ControlSliderRow.labelWidth, alignment: .leading)
+    }
+}
+
+/// Compact "Auto" switch: filled accent when on, so the state reads at a glance.
+struct AutoPill: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            Text("Auto")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(isOn ? .white : .secondary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(isOn ? Color.accentColor : Color.primary.opacity(0.08)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(isOn ? "Automatic adjustment on — click for manual control" : "Turn on automatic adjustment")
+        // Expose it to VoiceOver / keyboard access as a real on/off switch, not a button
+        .accessibilityRepresentation {
+            Toggle("Auto", isOn: $isOn)
+        }
     }
 }

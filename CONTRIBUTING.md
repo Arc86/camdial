@@ -50,7 +50,7 @@ Before modifying hardware control logic, please read **[ARCHITECTURE.md](ARCHITE
 2. **Protect USB-C Hubs & Monitors**: Never create `IOUSBDeviceUserClient` instances on devices that do not expose a Video interface (`bInterfaceClass == 14`).
 3. **Scope Class Descriptors**: Only parse Unit IDs when inside a Video Control interface descriptor (`bInterfaceSubClass == 1`).
 4. **Retain Plugin Pointers**: Any `IOCFPlugInInterface` providing a COM interface must remain retained for the lifetime of `UVCDevice` to prevent dangling pointer faults.
-5. **Window Geometry Stability**: The GUI window size is locked to `360 × 440` points. Toggling the preview must not balloon the window or push top controls off-screen.
+5. **Window Geometry Stability**: The GUI window is `400pt` wide and fits its height to the active tab (and the preview). Resizes must keep the top edge fixed and the whole window on screen — tab content scrolls rather than growing past the available height (see ARCHITECTURE.md §B).
 
 ---
 

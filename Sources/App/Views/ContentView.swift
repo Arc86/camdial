@@ -10,9 +10,17 @@ import AVFoundation
 
 public struct ContentView: View {
     @ObservedObject var deviceManager = DeviceManager.shared
-    @State private var selectedTab: Int = 0
+    @State private var selectedTab: SettingsTab = .picture
     @State private var isPreviewVisible: Bool = false
+    /// Aspect ratio reported by the running capture session (its preset can change the format).
+    @State private var sessionAspectRatio: CGFloat?
     public var onPinToggle: (() -> Void)?
+
+    private static let width: CGFloat = 400
+    private static let previewInset: CGFloat = 12
+    /// Header, tab bar, footer and dividers: everything around the tab content and preview.
+    private static let chromeHeight: CGFloat = 150
+    private static let maxContentHeight: CGFloat = 440
 
     public init(onPinToggle: (() -> Void)? = nil) {
         self.onPinToggle = onPinToggle
@@ -49,6 +57,7 @@ public struct ContentView: View {
                     }
                     .pickerStyle(.menu)
                     .frame(maxWidth: .infinity)
+            .environment(\.settingsContentMaxHeight, contentMaxHeight)
                 }
 
                 Button(action: { deviceManager.refreshDevices() }) {
@@ -85,62 +94,47 @@ public struct ContentView: View {
 
             Divider()
 
-            // Optional Live Video Preview
+            // Optional Live Video Preview, shown at the camera's native aspect ratio
             if isPreviewVisible {
-                ZStack {
+                Group {
                     if let avDev = deviceManager.selectedDevice?.avDevice {
-                        CameraPreviewView(captureDevice: avDev, isRunning: isPreviewVisible)
-                            .frame(height: 125)
-                            .cornerRadius(8)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                        CameraPreviewView(captureDevice: avDev, isRunning: isPreviewVisible) { ratio in
+                            sessionAspectRatio = ratio
+                        }
                     } else {
-                        Rectangle()
-                            .fill(Color.black.opacity(0.8))
-                            .frame(height: 125)
+                        Color.black.opacity(0.8)
                             .overlay(
                                 Text("Preview unavailable for this camera")
                                     .font(.caption)
                                     .foregroundColor(.white.opacity(0.8))
                             )
-                            .cornerRadius(8)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
                     }
                 }
-                .background(Color(NSColor.underPageBackgroundColor))
-                Divider()
+                .aspectRatio(previewAspectRatio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .padding(.horizontal, Self.previewInset)
+                .padding(.top, 10)
             }
 
-            // Tab Picker
-            Picker("", selection: $selectedTab) {
-                Text("Picture").tag(0)
-                Text("Exposure").tag(1)
-                Text("Optics").tag(2)
-                Text("Presets").tag(3)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+            SettingsTabBar(selection: $selectedTab)
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
 
-            Divider()
-
-            // Tab Content (flexibly fills available space with internal scrolling)
+            // Tab Content (sizes to its controls; scrolls past contentMaxHeight)
             Group {
                 switch selectedTab {
-                case 0:
+                case .picture:
                     PictureSettingsView(device: deviceManager.selectedDevice)
-                case 1:
+                case .exposure:
                     ExposureSettingsView(device: deviceManager.selectedDevice)
-                case 2:
+                case .optics:
                     OpticsSettingsView(device: deviceManager.selectedDevice)
-                case 3:
+                case .presets:
                     PresetsView(device: deviceManager.selectedDevice)
-                default:
-                    EmptyView()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .environment(\.settingsContentMaxHeight, contentMaxHeight)
 
             Divider()
 
@@ -185,6 +179,33 @@ public struct ContentView: View {
             .padding(.vertical, 6)
             .background(Color(NSColor.windowBackgroundColor))
         }
-        .frame(width: 360, height: 440)
+        // Height follows the content, so each tab (and the preview) gets exactly the room it needs
+        .frame(width: Self.width)
+        // Opaque backing so the popover's glass material doesn't wash out the controls
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var previewAspectRatio: CGFloat {
+        sessionAspectRatio ?? deviceAspectRatio
+    }
+
+    private var previewHeight: CGFloat {
+        isPreviewVisible ? (Self.width - 2 * Self.previewInset) / previewAspectRatio + 10 : 0
+    }
+
+    /// Keeps the whole window on screen: tab content gets whatever height the screen
+    /// has left after the chrome and preview, up to maxContentHeight, then scrolls.
+    private var contentMaxHeight: CGFloat {
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
+        let available = screenHeight - Self.chromeHeight - previewHeight - 40
+        return max(160, min(Self.maxContentHeight, available))
+    }
+
+    /// Width / height of the camera's current video format (16:9 if unknown).
+    private var deviceAspectRatio: CGFloat {
+        guard let format = deviceManager.selectedDevice?.avDevice?.activeFormat else { return 16.0 / 9.0 }
+        let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+        guard dims.width > 0, dims.height > 0 else { return 16.0 / 9.0 }
+        return CGFloat(dims.width) / CGFloat(dims.height)
     }
 }

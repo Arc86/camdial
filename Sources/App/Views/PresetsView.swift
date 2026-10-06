@@ -17,101 +17,71 @@ public struct PresetsView: View {
     public init(device: CameraDevice? = nil) {}
 
     public var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                // Top controls: Profile Menu & Save Custom
-                HStack(spacing: 8) {
-                    Picker("", selection: Binding(
-                        get: { activePresetName },
-                        set: { newName in
-                            selectAndApplyPreset(named: newName)
-                        }
-                    )) {
-                        ForEach(presets) { preset in
-                            Text(preset.name).tag(preset.name)
-                        }
-                    }
-                    .pickerStyle(.menu)
+        SettingsTabContainer {
+            // Top controls: delete / save custom profile
+            HStack(spacing: 8) {
+                Text("Profiles")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
 
-                    Button(action: { showingSaveSheet.toggle() }) {
-                        Label("Save As...", systemImage: "plus.square")
+                Spacer()
+
+                if let current = presets.first(where: { $0.name == activePresetName }), !current.isBuiltIn {
+                    Button(action: deleteActivePreset) {
+                        Image(systemName: "trash")
                             .font(.system(size: 11))
+                            .foregroundColor(.red)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    if let current = presets.first(where: { $0.name == activePresetName }), !current.isBuiltIn {
-                        Button(action: deleteActivePreset) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 11))
-                                .foregroundColor(.red)
-                        }
-                        .buttonStyle(.borderless)
-                        .help("Delete custom profile")
-                    }
+                    .buttonStyle(.borderless)
+                    .help("Delete custom profile")
                 }
 
-                // Inline Save Drawer
-                if showingSaveSheet {
-                    HStack(spacing: 6) {
-                        TextField("Profile Name (e.g. Window Sunny)", text: $newPresetName)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.system(size: 11))
-
-                        Button("Cancel") {
-                            showingSaveSheet = false
-                            newPresetName = ""
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-
-                        Button("Save") {
-                            saveCurrentPreset()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .disabled(newPresetName.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
-                    .padding(8)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(6)
-                }
-
-                Divider().padding(.vertical, 2)
-
-                // Instant Preset Cards (1-Click Switch)
-                VStack(spacing: 6) {
-                    ForEach(presets) { preset in
-                        PresetRowButton(
-                            preset: preset,
-                            isSelected: activePresetName == preset.name,
-                            action: {
-                                selectAndApplyPreset(named: preset.name)
-                            }
-                        )
-                    }
-                }
-
-                Divider().padding(.vertical, 4)
-
-                // Quick Hardware Reset Button
-                Button(action: {
-                    activePresetName = "Factory Default"
-                    vm.resetToDefaults()
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.counterclockwise")
-                        Text("Reset All to Camera Factory Defaults")
-                    }
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                Button(action: { showingSaveSheet.toggle() }) {
+                    Label("Save As...", systemImage: "plus.square")
+                        .font(.system(size: 11))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
             }
-            .padding(12)
+
+            // Inline Save Drawer
+            if showingSaveSheet {
+                HStack(spacing: 6) {
+                    TextField("Profile Name (e.g. Window Sunny)", text: $newPresetName)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 11))
+
+                    Button("Cancel") {
+                        showingSaveSheet = false
+                        newPresetName = ""
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button("Save") {
+                        saveCurrentPreset()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(newPresetName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .padding(8)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(6)
+            }
+
+            // Instant Preset Cards (1-Click Switch)
+            VStack(spacing: 4) {
+                ForEach(presets) { preset in
+                    PresetRowButton(
+                        preset: preset,
+                        isSelected: activePresetName == preset.name,
+                        action: {
+                            selectAndApplyPreset(named: preset.name)
+                        }
+                    )
+                }
+            }
         }
         .onAppear {
             presets = PresetManager.shared.presets
@@ -170,16 +140,10 @@ struct PresetRowButton: View {
                     .foregroundColor(isSelected ? .accentColor : .secondary)
                     .frame(width: 20)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(preset.name)
-                        .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                        .foregroundColor(.primary)
-
-                    Text(descriptionForPreset(preset.name))
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
+                Text(preset.name)
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
 
                 Spacer()
 
@@ -190,7 +154,8 @@ struct PresetRowButton: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(isSelected ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor).opacity(0.5))
@@ -201,6 +166,7 @@ struct PresetRowButton: View {
             )
         }
         .buttonStyle(.plain)
+        .help(descriptionForPreset(preset.name))
     }
 
     private func iconForPreset(_ name: String) -> String {

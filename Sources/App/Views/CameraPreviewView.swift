@@ -11,19 +11,25 @@ import AVFoundation
 public struct CameraPreviewView: NSViewRepresentable {
     public let captureDevice: AVCaptureDevice?
     public let isRunning: Bool
+    /// Called with width / height once the session is running, since the session
+    /// preset may switch the device to a different format than it had before.
+    public var onAspectRatioChange: ((CGFloat) -> Void)?
 
-    public init(captureDevice: AVCaptureDevice?, isRunning: Bool) {
+    public init(captureDevice: AVCaptureDevice?, isRunning: Bool, onAspectRatioChange: ((CGFloat) -> Void)? = nil) {
         self.captureDevice = captureDevice
         self.isRunning = isRunning
+        self.onAspectRatioChange = onAspectRatioChange
     }
 
     public func makeNSView(context: Context) -> CameraPreviewNSView {
         let view = CameraPreviewNSView()
+        view.onAspectRatioChange = onAspectRatioChange
         view.updateSession(device: captureDevice, running: isRunning)
         return view
     }
 
     public func updateNSView(_ nsView: CameraPreviewNSView, context: Context) {
+        nsView.onAspectRatioChange = onAspectRatioChange
         nsView.updateSession(device: captureDevice, running: isRunning)
     }
 }
@@ -32,6 +38,7 @@ public final class CameraPreviewNSView: NSView {
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private var currentDeviceID: String?
+    var onAspectRatioChange: ((CGFloat) -> Void)?
 
     public override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -85,7 +92,8 @@ public final class CameraPreviewNSView: NSView {
 
                 DispatchQueue.main.async {
                     let layer = AVCaptureVideoPreviewLayer(session: session)
-                    layer.videoGravity = .resizeAspectFill
+                    // Fit rather than fill: if the frame and format ever disagree, letterbox instead of cropping
+                    layer.videoGravity = .resizeAspect
                     layer.frame = self.bounds
                     self.layer?.sublayers?.forEach { $0.removeFromSuperlayer() }
                     self.layer?.addSublayer(layer)
@@ -94,6 +102,12 @@ public final class CameraPreviewNSView: NSView {
 
                 session.startRunning()
                 self.captureSession = session
+
+                let dims = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
+                if dims.width > 0, dims.height > 0 {
+                    let ratio = CGFloat(dims.width) / CGFloat(dims.height)
+                    DispatchQueue.main.async { self.onAspectRatioChange?(ratio) }
+                }
             } catch {
                 // Device might be in exclusive use or restricted
             }

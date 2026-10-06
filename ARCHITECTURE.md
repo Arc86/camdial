@@ -99,12 +99,15 @@ flowchart TD
 ### A. Live Auto-Tracking Sliders
 - When hardware Auto mode is active, the camera's internal Image Signal Processor (ISP) continuously updates its live registers (color temperature Kelvin, exposure time, sensor gain, focal distance).
 - `CameraViewModel` runs a `0.5s` polling timer (`pollAutoValues()`).
-- The slider knob and readout dynamically follow the camera's live adjustments, displaying an `(Auto)` indicator.
+- The slider knob and readout dynamically follow the camera's live adjustments; the readout turns the accent color next to a filled `Auto` switch.
 - Sliders remain interactive: as soon as the user drags a slider, Auto mode automatically disengages (`autoBinding?.wrappedValue = false`) to grant immediate manual control.
 
-### B. Stable Window Geometry (No Jumping/Moving)
-- **Challenge**: In macOS AppKit, when a popover or utility window increases in height near the bottom of the screen, the window manager pushes the window frame **upwards**. Previously, opening the live preview increased height from 420px to 630px, pushing the top header off the top of the screen.
-- **Solution** (`Sources/App/Views/ContentView.swift`): The window is locked to a constant `360 × 440 points`. The preview occupies a compact 16:9 frame (`125pt`), and the tab section adapts flexibly (`frame(maxHeight: .infinity)`) with internal scrolling. The window never resizes or shifts, and top controls stay stationary.
+### B. Content-Fitted, Top-Anchored Window Geometry
+- **Challenge**: In macOS AppKit, when a popover or utility window increases in height near the bottom of the screen, the window manager pushes the window frame **upwards**. Previously, opening the live preview increased height from 420px to 630px, pushing the top header off the top of the screen. A fixed-size window avoids that, but leaves large empty areas on short tabs and squeezes the preview into a thin strip.
+- **Solution**:
+  - The window is `400pt` wide and its height follows the content (`NSHostingController.sizingOptions = .preferredContentSize` in `AppDelegate.swift`), so each tab gets exactly the room it needs and the preview is shown at the camera's real aspect ratio.
+  - Resizes keep the top edge fixed: the popover hangs from the menu bar, and the pinned panel grows downward. If the pinned panel would extend past the bottom of the screen, `windowDidResize` lifts it just enough to stay visible, never above the top of the screen.
+  - Tab content (`SettingsTabContainer.swift`) is measured and only scrolls past `settingsContentMaxHeight`, which `ContentView` derives from the screen's visible height minus the chrome and preview, so the whole window always fits on screen.
 
 ### C. 1-Click Instant Presets
 - Presets are applied immediately on click without an "Apply Preset" button.
@@ -155,7 +158,9 @@ flowchart TD
     │       ├── CameraViewModel.swift   # Reactive bridge & auto-polling loop
     │       ├── CameraPreviewView.swift # AVCaptureVideoPreviewLayer wrapper
     │       ├── ContentView.swift       # Main window layout
-    │       ├── ControlSliderRow.swift  # Live slider with auto indicator
+    │       ├── ControlSliderRow.swift  # Single-line slider row with Auto switch
+    │       ├── SettingsTabBar.swift    # Icon + label tab bar
+    │       ├── SettingsTabContainer.swift # Content-fitted tab body, scrolls past max height
     │       ├── PictureSettingsView.swift
     │       ├── ExposureSettingsView.swift
     │       ├── OpticsSettingsView.swift

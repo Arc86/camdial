@@ -36,15 +36,18 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let pop = NSPopover()
         pop.behavior = .transient
         pop.animates = true
-        pop.contentSize = NSSize(width: 360, height: 440)
-        let hostingView = NSHostingView(rootView: ContentView(onPinToggle: { [weak self] in
+        pop.contentViewController = makeContentController()
+        self.popover = pop
+    }
+
+    /// Hosts ContentView so the popover / panel size follows the SwiftUI content
+    /// (each tab's height, plus the preview when it is open).
+    private func makeContentController() -> NSHostingController<ContentView> {
+        let hosting = NSHostingController(rootView: ContentView(onPinToggle: { [weak self] in
             self?.togglePinMode()
         }))
-        pop.contentViewController = NSViewController()
-        pop.contentViewController?.view = hostingView
-        self.popover = pop
-
-
+        hosting.sizingOptions = .preferredContentSize
+        return hosting
     }
 
     @objc public func togglePopover() {
@@ -81,7 +84,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             isPinned = true
 
             let panel = NSPanel(
-                contentRect: NSRect(x: 200, y: 200, width: 360, height: 440),
+                contentRect: NSRect(x: 200, y: 200, width: 400, height: 460),
                 styleMask: [.titled, .closable, .utilityWindow, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
@@ -90,12 +93,24 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.level = .floating
             panel.isFloatingPanel = true
             panel.isMovableByWindowBackground = true
-            panel.contentView = NSHostingView(rootView: ContentView(onPinToggle: { [weak self] in
-                self?.togglePinMode()
-            }))
+            panel.contentViewController = makeContentController()
+            panel.delegate = self
             panel.center()
             panel.makeKeyAndOrderFront(nil)
             self.floatingWindow = panel
         }
+    }
+}
+
+extension AppDelegate: NSWindowDelegate {
+    /// The pinned panel keeps its top edge fixed as content grows, so near the bottom
+    /// of the screen it can extend off-screen. Lift it just enough to stay visible,
+    /// without ever pushing the title bar above the top of the screen.
+    public func windowDidResize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === floatingWindow,
+              let visible = window.screen?.visibleFrame,
+              window.frame.minY < visible.minY else { return }
+        let y = min(visible.minY, visible.maxY - window.frame.height)
+        window.setFrameOrigin(NSPoint(x: window.frame.minX, y: y))
     }
 }
