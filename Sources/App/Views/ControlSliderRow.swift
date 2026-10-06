@@ -85,7 +85,7 @@ public struct ControlSliderRow: View {
             // No digit grouping: "5264 K" rather than a locale-dependent "5.264 K"
             Text("\(Int(value), format: .number.grouping(.never))\(unit.isEmpty ? "" : " " + unit)")
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundColor(isCapable ? (isAutoActive ? .accentColor : .primary) : .secondary)
+                .foregroundStyle(isCapable ? (isAutoActive ? Color.accentColor : Color.primary) : Color.secondary)
                 .lineLimit(1)
                 .fixedSize()
                 // Minimum keeps typical values aligned; longer ones ("10000 K") widen instead of truncating
@@ -130,7 +130,7 @@ struct SettingRowLabel: View {
                 .minimumScaleFactor(0.85)
         }
         .font(.system(size: 12, weight: .medium))
-        .foregroundColor(isEnabled ? .primary : .secondary)
+        .foregroundStyle(isEnabled ? .primary : .secondary)
         .frame(width: ControlSliderRow.labelWidth, alignment: .leading)
     }
 }
@@ -145,10 +145,10 @@ struct AutoPill: View {
         } label: {
             Text("Auto")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(isOn ? .white : .secondary)
+                .foregroundStyle(isOn ? Color.white : Color.secondary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
-                .background(Capsule().fill(isOn ? Color.accentColor : Color.primary.opacity(0.08)))
+                .background(isOn ? Color.accentColor : Color.primary.opacity(0.08), in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

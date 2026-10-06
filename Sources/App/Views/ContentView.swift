@@ -68,9 +68,9 @@ public struct ContentView: View {
                 .help("Refresh connected cameras")
 
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isPreviewVisible.toggle()
-                    }
+                    // No withAnimation: the window animates its own resize, and a SwiftUI
+                    // animation of the preview insertion on a different curve makes it stutter
+                    isPreviewVisible.toggle()
                 }) {
                     Image(systemName: isPreviewVisible ? "video.slash" : "video.badge.waveform")
                         .font(.system(size: 12))
@@ -110,7 +110,9 @@ public struct ContentView: View {
                             )
                     }
                 }
-                .aspectRatio(previewAspectRatio, contentMode: .fit)
+                // Explicit size: an .aspectRatio(.fit) frame is flexible and gets squeezed
+                // narrower whenever the window offers less height than the ideal
+                .frame(width: previewWidth, height: previewWidth / previewAspectRatio)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .padding(.horizontal, Self.previewInset)
                 .padding(.top, 10)
@@ -135,6 +137,10 @@ public struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
             .environment(\.settingsContentMaxHeight, contentMaxHeight)
+
+            // Absorbs slack while the window animates to a taller size, keeping the
+            // header pinned to the top and the footer to the bottom edge
+            Spacer(minLength: 0)
 
             Divider()
 
@@ -189,8 +195,12 @@ public struct ContentView: View {
         sessionAspectRatio ?? deviceAspectRatio
     }
 
+    private var previewWidth: CGFloat {
+        Self.width - 2 * Self.previewInset
+    }
+
     private var previewHeight: CGFloat {
-        isPreviewVisible ? (Self.width - 2 * Self.previewInset) / previewAspectRatio + 10 : 0
+        isPreviewVisible ? previewWidth / previewAspectRatio + 10 : 0
     }
 
     /// Keeps the whole window on screen: tab content gets whatever height the screen

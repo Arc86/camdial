@@ -34,6 +34,7 @@ public enum SettingsTab: Int, CaseIterable, Identifiable {
 public struct SettingsTabBar: View {
     @Binding var selection: SettingsTab
     @Namespace private var highlight
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public var body: some View {
         HStack(spacing: 2) {
@@ -66,12 +67,10 @@ public struct SettingsTabBar: View {
             }
         }
         .padding(3)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
-        )
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         // Animate only the highlight within the bar; a withAnimation around the selection
         // change would also animate the tab content swap and the window resize.
-        .animation(.easeInOut(duration: 0.2), value: selection)
+        // Reduce Motion: the highlight jumps instead of sliding.
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: selection)
     }
 }

@@ -21,14 +21,33 @@ public struct SettingsTabContainer<Content: View>: View {
         // controls and only starts scrolling once they exceed maxHeight. No measurement
         // round-trip (which briefly collapsed the window on every tab switch), and one
         // stable view identity so controls aren't rebuilt at the limit.
-        ScrollView {
-            VStack(spacing: 10) {
-                content
+        IdealHeightCap(maxHeight: maxHeight) {
+            ScrollView {
+                VStack(spacing: 10) {
+                    content
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .top)
         }
-        .frame(maxHeight: maxHeight)
+    }
+}
+
+/// Sizes its child to min(ideal height, maxHeight), shrinking further only if offered less
+/// (e.g. mid-way through the window's resize animation), but never growing past its ideal.
+/// A plain `.frame(maxHeight:)` would grab any slack, leaving empty space under the controls.
+private struct IdealHeightCap: Layout {
+    var maxHeight: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        let ideal = child.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        let height = min(ideal.height, maxHeight, proposal.height ?? .infinity)
+        return CGSize(width: proposal.width ?? ideal.width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
     }
 }
 

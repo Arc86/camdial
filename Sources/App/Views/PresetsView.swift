@@ -22,7 +22,7 @@ public struct PresetsView: View {
             HStack(spacing: 8) {
                 Text("Profiles")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
