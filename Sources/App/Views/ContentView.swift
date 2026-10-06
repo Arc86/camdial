@@ -57,7 +57,6 @@ public struct ContentView: View {
                     }
                     .pickerStyle(.menu)
                     .frame(maxWidth: .infinity)
-            .environment(\.settingsContentMaxHeight, contentMaxHeight)
                 }
 
                 Button(action: { deviceManager.refreshDevices() }) {
@@ -189,6 +188,10 @@ public struct ContentView: View {
         .frame(width: Self.width)
         // Opaque backing so the popover's glass material doesn't wash out the controls
         .background(Color(nsColor: .windowBackgroundColor))
+        // A new camera reports its own ratio once its session runs; until then use its format
+        .onChange(of: deviceManager.selectedDevice?.id) { _ in
+            sessionAspectRatio = nil
+        }
     }
 
     private var previewAspectRatio: CGFloat {
